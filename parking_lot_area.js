@@ -49,13 +49,33 @@ drawingTool.onDraw(function(geometry) {
 
 // Function to compute area & perimeter
 function computeArea() {
+    if (drawnPolygons.size().getInfo() === 0) {
+        resultPanel.clear();
+        resultPanel.add(ui.Label({
+            value: "⚠️ No polygon drawn. Please draw a polygon first.",
+            style: {color: 'red', fontSize: '14px'}
+        }));
+        return;
+    }
+
     var mergedGeometry = drawnPolygons.union().geometry();
     
-    var areaSqMeters = mergedGeometry.area();  // Area in square meters
-    var perimeterMeters = mergedGeometry.perimeter();  // Perimeter in meters
+    var areaSqMeters = mergedGeometry.area().round();  // Area in square meters
+    var perimeterMeters = mergedGeometry.perimeter().round();  // Perimeter in meters
 
-    print('✅ Parking Lot Area (sq meters):', areaSqMeters);
-    print('📏 Parking Lot Perimeter (meters):', perimeterMeters);
+    // Clear previous results
+    resultPanel.clear();
+
+    // Display results in UI
+    resultPanel.add(ui.Label({
+        value: '✅ Parking Lot Area: ' + areaSqMeters.getInfo() + ' m²',
+        style: {color: 'green', fontSize: '14px'}
+    }));
+    
+    resultPanel.add(ui.Label({
+        value: '📏 Perimeter: ' + perimeterMeters.getInfo() + ' m',
+        style: {color: 'blue', fontSize: '14px'}
+    }));
 }
 
 // Function to erase the last drawn polygon
@@ -63,6 +83,9 @@ function eraseLast() {
     drawnPolygons = ee.FeatureCollection([]); // Reset collection
     Map.layers().reset(); // Clear map layers
     Map.addLayer(image, {bands: ['R', 'G', 'B'], min: 0, max: 255}, 'Satellite Image');
+    
+    // Clear results from UI
+    resultPanel.clear();
 }
 
 // Buttons for drawing and erasing
@@ -83,6 +106,11 @@ var computeButton = ui.Button({
     onClick: computeArea
 });
 
+// Create a panel to display results
+var resultPanel = ui.Panel({
+    style: {position: 'top-right', width: '250px', padding: '8px'}
+});
+
 // Add UI elements to panel
 panel.add(latInput);
 panel.add(lonInput);
@@ -93,6 +121,7 @@ panel.add(computeButton);
 
 // Add panel to the UI
 Map.add(panel);
+Map.add(resultPanel);
 
 // Set default map location (optional)
 Map.centerObject(ee.Geometry.Point([-94.67144195540412, 38.85767473217091]), 19);
